@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:weather/model/weather_model.dart';
 import 'package:weather/services/weather_api_client.dart';
 import 'package:weather/views/additional_information.dart';
 import 'package:weather/views/current_weather.dart';
@@ -24,49 +25,62 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   WeatherApiClient client = WeatherApiClient();
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    client.getCurrentWeather("Georgia");
+  Weather? data;
+
+  Future<void> getData() async {
+    data = await client.getCurrentWeather("london");
   }
 
   @override
   Widget build(BuildContext context) {
+    var icons;
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text(
-          "Weather APP",
-          style: TextStyle(color: Colors.black),
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          onPressed: () {},
-          icon: Icon(Icons.menu),
-          color: Colors.black,
-        ),
-        elevation: 0.0,
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          currentWeather(Icons.wb_sunny_rounded, "26,3", "Georgie"),
-          SizedBox(
-            height: 60.0,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          title: const Text(
+            "Weather APP",
+            style: TextStyle(color: Colors.black),
           ),
-          Text(
-            "Additional Information",
-            style: TextStyle(
-                fontSize: 24.0,
-                color: Colors.grey,
-                fontWeight: FontWeight.bold),
+          centerTitle: true,
+          leading: IconButton(
+            onPressed: () {},
+            icon: Icon(Icons.search),
+            color: Colors.black,
           ),
-          Divider(),
-          SizedBox(height: 20.0),
-          additionalInformation("24", "2", "1014", "24.6"),
-        ],
-      ),
-    );
+          elevation: 0.0,
+        ),
+        body: FutureBuilder(
+          future: getData(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  currentWeather(Icons.wb_sunny_rounded, "${data!.temp}°",
+                      "${data!.cityName}"),
+                  SizedBox(
+                    height: 60.0,
+                  ),
+                  Text(
+                    "Additional Information",
+                    style: TextStyle(
+                        fontSize: 24.0,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  Divider(),
+                  SizedBox(height: 20.0),
+                  additionalInformation("${data!.wind}", "${data!.humidity}",
+                      "${data!.pressure}", "${data!.feels_like}"),
+                ],
+              );
+            } else if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+            return Container();
+          },
+        ));
   }
 }
